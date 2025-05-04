@@ -1,0 +1,5 @@
+-- //有問題 之後解
+-- SET SCHEMA TESTSC;
+-- INSERT INTO TCUSTOMER VALUES (
+--     1,'asd452014','casuser','casuser@google.com',CURRENT_TIMESTAMP
+-- );
