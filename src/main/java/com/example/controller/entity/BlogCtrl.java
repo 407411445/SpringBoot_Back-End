@@ -36,13 +36,13 @@ public class BlogCtrl {
 
 
     private static class CreateResult{
-        private final String userUnid;
-        public CreateResult(String userUnid){
-            this.userUnid = userUnid;
+        private final String blogUnid;
+        public CreateResult(String blogUnid){
+            this.blogUnid = blogUnid;
         }
 
-        public String getUserUnid(){
-            return userUnid;
+        public String getBlogUnid(){
+            return blogUnid;
         }
 
     }

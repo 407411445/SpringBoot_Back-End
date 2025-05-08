@@ -1,6 +1,7 @@
 package com.example.customer;
 
 import com.example.customer.dto.CustomerDto;
+import com.example.customer.model.CustomerMapper;
 import com.example.customer.model.dao.CustomerDao;
 import com.example.customer.model.rdb.CustomerInfo;
 
@@ -38,29 +39,25 @@ public class CustomerService {
 
         CustomerDto creator = currentUser;
         if(creator ==null){
-            throw new RuntimeException("Create user failed: " +currentUser.getName() );
+            throw new CustomerServiceException(CustomerServiceException.ExceptionType.Undefined,
+                    "Create User failed " );
         }
-        LocalDateTime createLocalTime = LocalDateTime.now();
-        CustomerInfo entity = new CustomerInfo();
-        entity.setName(creator.getName());
-        entity.setEmail(creator.getEmail());
-        entity.setCreateTime(createLocalTime);
-        entity.setUnid(creator.getUnid());
+        CustomerInfo entity = CustomerMapper.INSTANCE.dto2Dao(currentUser);
+
+        if (daoHelper.findCustomerByUnId(entity.getUnid())){
+            throw new CustomerServiceException(CustomerServiceException.ExceptionType.DuplicateCustomerUnid,
+                    "Unique id already exists: " + entity.getUnid());
+        }
 
         InsertResult insertResult= this.daoHelper.insertWithDao(entity);
-        try {
-            return insertResult.getUnid();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return insertResult.getUnid();
     }
 
     public CustomerDto doGetCustomer(String unid){
         CustomerInfo userEntity = this.customerDao.getCustomerByUnId(unid);
         LOGGER.info("userEntity: " + userEntity);
-        LocalDateTime userEntityCreateTime = userEntity.getCreateTime();
-        //TODO 改成modelmapper寫法
-        return new CustomerDto(userEntity.getUnid(),userEntity.getName(),userEntity.getEmail(),String.valueOf(userEntityCreateTime));
+        // 改成modelmapper寫法 2025/05/05 改用MapStruct
+        return CustomerMapper.INSTANCE.dao2Dto(userEntity);
     }
 
     private static class DaoHelper {
@@ -74,8 +71,13 @@ public class CustomerService {
         public InsertResult insertWithDao(CustomerInfo entity){
             InsertResult insertResult = this.customerDao.insertNewCustomerInfo(entity);
 
-            this.customerDao.update(entity);
             return insertResult;
+        }
+
+        public boolean findCustomerByUnId(String unid){
+            CustomerInfo userEntity = this.customerDao.getCustomerByUnId(unid);
+
+            return userEntity!=null;
         }
     }
 }

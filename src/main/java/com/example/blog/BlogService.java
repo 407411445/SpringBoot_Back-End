@@ -1,17 +1,16 @@
 package com.example.blog;
 
 import com.example.blog.dto.BlogDto;
+import com.example.blog.model.BlogMapper;
 import com.example.blog.model.dao.BlogDao;
+import com.example.blog.model.dao.BlogDao.InsertResult;
 import com.example.blog.model.rdb.BlogInfo;
 import com.google.gson.Gson;
 import jakarta.annotation.PostConstruct;
-import com.example.blog.model.dao.BlogDao.InsertResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Service("blogService")
 public class BlogService {
@@ -36,31 +35,28 @@ public class BlogService {
 
         BlogDto newBloginfo = blog;
         if(newBloginfo ==null){
-            throw new RuntimeException("Create blog failed: " +newBloginfo.getHeadline() );
+            throw new BlogServiceException(BlogServiceException.ExceptionType.Undefined,
+                    "Blog object is null");
         }
-        LocalDateTime createLocalTime = LocalDateTime.now();
-        BlogInfo entity = new BlogInfo();
-        entity.setUnid(newBloginfo.getUnid());
-        entity.setHeadline(newBloginfo.getHeadline());
-        entity.setContent(newBloginfo.getContent());
-        entity.setAuthor(newBloginfo.getAuthor());
-        entity.setCreateTime(createLocalTime);
-        entity.setUpdateTime(createLocalTime);
+        blog.setUpdateTime(blog.getCreateTime());
+        BlogInfo entity = BlogMapper.INSTANCE.dto2Dao(blog);
 
-        BlogDao.InsertResult insertResult= this.daoHelper.insertWithDao(entity);
-        try {
-            return insertResult.getUnid();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if(daoHelper.findBlogByUnid(entity.getUnid())){
+            //這裡怪怪的 已經用日期去給Unid 不會有重複的問題 以後改
+            throw new BlogServiceException(BlogServiceException.ExceptionType.DuplicateBlogUnid,
+                    " blog unid already exists");
         }
+        BlogDao.InsertResult insertResult= this.daoHelper.insertWithDao(entity);
+
+        return insertResult.getUnid();
+
     }
 
     public BlogDto doGetBlog(String unid){
         BlogInfo blogEntity = this.blogDao.getBlogByUnId(unid);
-        LOGGER.info("userEntity: " + blogEntity);
-        LocalDateTime blogCreateTime = blogEntity.getCreateTime();
-        //TODO 改成modelmapper寫法
-        return new BlogDto(blogEntity.getUnid(),blogEntity.getAuthor(),blogEntity.getContent(),String.valueOf(blogCreateTime),String.valueOf(blogCreateTime));
+        LOGGER.info("blogEntity: " + blogEntity);
+        //2025/05/08 改成MapStruct
+        return BlogMapper.INSTANCE.dao2Dto(blogEntity);
     }
 
     private static class DaoHelper {
@@ -73,8 +69,13 @@ public class BlogService {
 
         public InsertResult insertWithDao(BlogInfo entity){
             InsertResult insertResult = this.BlogDao.insertNewBlogInfo(entity);
-            this.BlogDao.update(entity);
             return insertResult;
+        }
+
+        public boolean findBlogByUnid(String unid){
+            BlogInfo blogEntity = this.BlogDao.getBlogByUnId(unid);
+
+            return blogEntity!=null;
         }
     }
 }

@@ -11,7 +11,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.security",
+@ComponentScan(basePackages = {
+		"com.autocfg",
+		"com.security",
 		"com.example.customer",
 		"com.example.blog",
 		"com.example.controller",
