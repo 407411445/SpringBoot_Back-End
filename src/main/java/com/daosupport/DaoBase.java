@@ -28,7 +28,10 @@ public abstract class DaoBase<T, ID extends Serializable> {
 
     public void insert(final T entity) {
         try {
+            // 只有當實體是新的（ID 為 null）時才調用 persist
             this.entityManager.persist(entity);
+            // 使用 merge 來更新已存在的實體
+//            this.entityManager.merge(entity);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());

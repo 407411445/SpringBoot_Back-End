@@ -12,15 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-@SpringBootTest(classes = SpringBootSpApplication.class)
-@ActiveProfiles("application")
-@Transactional
-@Commit
+@SpringBootTest(classes = SpringBootSpApplication.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertySource(properties = {"server.port=8080"})
 public class CustomerServiceTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomerServiceTest.class);
     private static final Gson GSON = new Gson();
@@ -29,16 +28,23 @@ public class CustomerServiceTest {
 
     @Test
     public void getNewUser() {
-        LocalDateTime currentTime = LocalDateTime.now();
-        CustomerDto newCustomerDto = new CustomerDto("yushan123","youzhan","test2@", String.valueOf(currentTime));
-        newCustomerDto.setObjectId(88);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTime = LocalDateTime.now().format(formatter);
+
+        CustomerDto newCustomerDto = new CustomerDto("yushan123","youzhan","test2@", formattedTime);
         String customerUnid = testObj.createNewUser(newCustomerDto);
+        try {
+            Thread.sleep(50000);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
         LOGGER.warn(customerUnid);
     }
 
     @Test
     public void getUserByUnid() {
-        CustomerDto currentCustomerDto = testObj.doGetCustomer("yushan123");
+        CustomerDto currentCustomerDto = testObj.doGetCustomer("22666666");
         LOGGER.info(GSON.toJson(currentCustomerDto));
 
     }
